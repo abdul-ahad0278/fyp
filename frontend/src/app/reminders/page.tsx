@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { getReminders, createReminder, deleteReminder } from "@/services/api";
 import Sidebar from "@/components/Sidebar";
 import { FiPlus, FiTrash2, FiClock } from "react-icons/fi";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface Reminder {
   id: string;
@@ -25,6 +26,8 @@ export default function RemindersPage() {
   const [time, setTime] = useState("08:00");
   const [frequency, setFrequency] = useState("daily");
   const [loading, setLoading] = useState(true);
+
+  usePushNotifications(user?.id);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {

@@ -1,12 +1,26 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import FRONTEND_URL
 from app.routes import chat, reminders, location, health
+from app.services import scheduler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle app startup and shutdown events."""
+    # Startup: Start the reminder scheduler
+    scheduler.start_scheduler()
+    yield
+    # Shutdown: Stop the scheduler
+    scheduler.stop_scheduler()
+
 
 app = FastAPI(
     title="Healthcare Chatbot API",
     description="AI-powered healthcare assistant with symptom analysis, emotion detection, and health tracking.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS — allow frontend to call backend

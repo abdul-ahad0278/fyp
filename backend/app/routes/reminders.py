@@ -97,3 +97,67 @@ async def delete_reminder(reminder_id: str):
         return {"message": "Reminder deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ──────────────────── DEBUG/TEST ENDPOINTS ────────────────
+
+@router.post("/test/create-reminder")
+async def test_create_reminder(
+    user_id: str,
+    medicine: str,
+    dosage: str,
+    time: str  # Format: "HH:MM" e.g. "16:20"
+):
+    """
+    Test endpoint to create a reminder without full request body.
+    Use this to quickly test reminder notifications.
+    
+    Example: POST /api/reminders/test/create-reminder?user_id=<uid>&medicine=paracetamol&dosage=500mg&time=16:20
+    """
+    try:
+        reminder = await supabase_service.create_reminder(
+            user_id=user_id,
+            medicine=medicine,
+            dosage=dosage,
+            time=time,
+            frequency="daily"
+        )
+        return {
+            "message": f"✓ Reminder created! Will send notification at {time}",
+            "reminder": reminder
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/test/send-now")
+async def test_send_now(
+    user_id: str,
+    medicine: str = "Paracetamol",
+    dosage: str = "500mg",
+    time: str = "now"
+):
+    """
+    Immediately send a push notification to the user's active subscription.
+    Use this to verify browser popup delivery without waiting for the scheduler.
+    """
+    try:
+        subscription = await supabase_service.get_push_subscription(user_id)
+        if not subscription or not subscription.get("subscription"):
+            raise HTTPException(status_code=404, detail="No active push subscription found for user")
+
+        success = await notification_service.send_reminder_notification(
+            subscription=subscription.get("subscription"),
+            medicine=medicine,
+            dosage=dosage,
+            time=time,
+        )
+
+        return {
+            "message": "Push send attempted",
+            "success": success,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -73,6 +73,12 @@ async function subscribeUserToPushNotifications(
       return;
     }
 
+      const existingSubscription = await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        await existingSubscription.unsubscribe();
+        console.log("Removed stale push subscription");
+      }
+
     // Subscribe to push notifications
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,

@@ -1,11 +1,18 @@
 import json
 from pywebpush import webpush, WebPushException
+from py_vapid import Vapid
 from app.config import VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL
 
 
 def _get_vapid_private_key_for_webpush() -> str:
     """Convert escaped-newline PEM from env into valid PEM string."""
-    return (VAPID_PRIVATE_KEY or "").replace("\\n", "\n")
+    return (VAPID_PRIVATE_KEY or "").replace("\\n", "\n").strip()
+
+
+def _get_vapid_client() -> Vapid:
+    """Build a VAPID client from the PEM private key."""
+    vapid_private_key = _get_vapid_private_key_for_webpush().encode("utf-8")
+    return Vapid.from_pem(vapid_private_key)
 
 async def send_reminder_notification(
     subscription: dict,
@@ -35,20 +42,21 @@ async def send_reminder_notification(
     }
     
     try:
+        vapid_client = _get_vapid_client()
         webpush(
             subscription_info=subscription,
             data=json.dumps(message_data),
-            vapid_private_key=_get_vapid_private_key_for_webpush(),
+            vapid_private_key=vapid_client,
             vapid_claims={"sub": VAPID_EMAIL},
             timeout=10
         )
-        print(f"✓ Notification sent for {medicine} at {time}")
+        print(f"Notification sent for {medicine} at {time}")
         return True
     except WebPushException as e:
-        print(f"✗ Push notification failed for {medicine}: {str(e)}")
+        print(f"Push notification failed for {medicine}: {str(e)}")
         return False
     except Exception as e:
-        print(f"✗ Unexpected error sending notification: {str(e)}")
+        print(f"Unexpected error sending notification: {str(e)}")
         return False
 
 
@@ -75,20 +83,21 @@ async def send_emergency_alert_notification(
     }
     
     try:
+        vapid_client = _get_vapid_client()
         webpush(
             subscription_info=subscription,
             data=json.dumps(message_data),
-            vapid_private_key=_get_vapid_private_key_for_webpush(),
+            vapid_private_key=vapid_client,
             vapid_claims={"sub": VAPID_EMAIL},
             timeout=10
         )
-        print(f"✓ Emergency notification sent")
+        print("Emergency notification sent")
         return True
     except WebPushException as e:
-        print(f"✗ Emergency notification failed: {str(e)}")
+        print(f"Emergency notification failed: {str(e)}")
         return False
     except Exception as e:
-        print(f"✗ Unexpected error sending emergency notification: {str(e)}")
+        print(f"Unexpected error sending emergency notification: {str(e)}")
         return False
 
 
