@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import FRONTEND_URL
-from app.routes import chat, reminders, location, health
+from app.routes import chat, reminders, location, health, profile, vision
 from app.services import scheduler
 
 
@@ -37,6 +37,8 @@ app.include_router(chat.router)
 app.include_router(reminders.router)
 app.include_router(location.router)
 app.include_router(health.router)
+app.include_router(profile.router)
+app.include_router(vision.router)
 
 
 @app.get("/")

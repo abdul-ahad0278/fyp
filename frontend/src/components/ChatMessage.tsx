@@ -60,6 +60,7 @@ export default function ChatMessage({
 
   // Fetch pharmacy links for a specific medicine
   const fetchPharmacyLinks = async (medicine: string) => {
+    if (!medicine.trim()) return;
     setLoadingPharmacy(true);
     try {
       const links = await getOnlinePharmacyLinks(medicine);

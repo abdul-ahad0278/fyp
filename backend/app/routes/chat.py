@@ -21,33 +21,45 @@ class ChatResponse(BaseModel):
     precautions: list[str]
     recommendations: list[str]
     needs_emergency: bool
+    is_health_related: bool
 
 
 @router.post("/send", response_model=ChatResponse)
 async def send_message(req: ChatRequest):
     """Process a user message: analyze symptoms, detect emotion, generate response."""
-
     try:
-        # Get or create conversation
+        # Require completed profile BEFORE the bot answers anything.
+        profile = await supabase_service.get_user_profile(req.user_id)
+        if not profile or not profile.get("is_complete"):
+            raise HTTPException(
+                status_code=412,
+                detail={
+                    "code": "profile_incomplete",
+                    "message": (
+                        "Please complete your health profile (age, gender, medical "
+                        "history) before chatting. This lets me give safer, more "
+                        "personalised advice."
+                    ),
+                },
+            )
+
         conversation_id = req.conversation_id
         if not conversation_id:
             conversation = await supabase_service.create_conversation(req.user_id)
             conversation_id = conversation["id"]
 
-        # Fetch conversation history for context
         history = await supabase_service.get_conversation_messages(conversation_id, limit=10)
 
-        # Save user message
         await supabase_service.save_message(
             conversation_id=conversation_id,
             role="user",
-            content=req.message
+            content=req.message,
         )
 
-        # Analyze with Gemini (symptoms + emotion + severity in one call)
-        analysis = await gemini_service.analyze_message(req.message, history)
+        analysis = await gemini_service.analyze_message(
+            req.message, history, profile=profile
+        )
 
-        # Save bot response with extracted data
         await supabase_service.save_message(
             conversation_id=conversation_id,
             role="assistant",
@@ -57,20 +69,21 @@ async def send_message(req: ChatRequest):
             severity=analysis["severity"],
             conditions=analysis["conditions"],
             recommendations=analysis["recommendations"],
-            precautions=analysis["precautions"]
+            precautions=analysis["precautions"],
         )
 
-        # Save health record if symptoms were detected
-        if analysis["symptoms"]:
+        # Only log a health record when the message was actually health-related
+        # AND had detected symptoms — stops non-health / off-topic chats from
+        # polluting the history timeline.
+        if analysis["is_health_related"] and analysis["symptoms"]:
             await supabase_service.save_health_record(
                 user_id=req.user_id,
                 symptoms=analysis["symptoms"],
                 conditions=analysis["conditions"],
                 severity=analysis["severity"],
-                emotion=analysis["emotion"]
+                emotion=analysis["emotion"],
             )
 
-        # Update conversation activity
         await supabase_service.update_conversation_activity(conversation_id)
 
         return ChatResponse(
@@ -82,9 +95,12 @@ async def send_message(req: ChatRequest):
             conditions=analysis["conditions"],
             precautions=analysis["precautions"],
             recommendations=analysis["recommendations"],
-            needs_emergency=analysis["needs_emergency"]
+            needs_emergency=analysis["needs_emergency"],
+            is_health_related=analysis["is_health_related"],
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

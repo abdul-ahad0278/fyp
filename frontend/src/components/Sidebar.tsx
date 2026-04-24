@@ -9,10 +9,12 @@ import {
   FiMapPin,
   FiUser,
   FiLogOut,
+  FiCamera,
 } from "react-icons/fi";
 
 const navItems = [
   { href: "/chat", label: "Chat", icon: FiMessageSquare },
+  { href: "/mediscan", label: "MediScan", icon: FiCamera },
   { href: "/history", label: "Health History", icon: FiClock },
   { href: "/reminders", label: "Reminders", icon: FiBell },
   { href: "/nearby", label: "Nearby", icon: FiMapPin },

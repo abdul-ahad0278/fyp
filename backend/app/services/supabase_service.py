@@ -159,6 +159,62 @@ async def delete_reminder(reminder_id: str):
         .execute()
 
 
+# ───────────────── User Profile ─────────────────
+
+async def get_user_profile(user_id: str) -> dict | None:
+    result = supabase.table("user_profiles") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .limit(1) \
+        .execute()
+    return result.data[0] if result.data else None
+
+
+async def upsert_user_profile(user_id: str, data: dict) -> dict:
+    payload = {**data, "user_id": user_id}
+    required = ["age", "gender"]
+    payload["is_complete"] = all(payload.get(k) not in (None, "", []) for k in required)
+    result = supabase.table("user_profiles") \
+        .upsert(payload, on_conflict="user_id") \
+        .execute()
+    return result.data[0]
+
+
+# ───────────────── Vision Analyses ─────────────────
+
+async def save_vision_analysis(
+    user_id: str,
+    mode: str,
+    user_note: str | None,
+    detected_items: list,
+    analysis: str,
+    severity: str | None,
+    recommendations: list,
+    warnings: list,
+) -> dict:
+    result = supabase.table("vision_analyses").insert({
+        "user_id": user_id,
+        "mode": mode,
+        "user_note": user_note,
+        "detected_items": detected_items or [],
+        "analysis": analysis,
+        "severity": severity,
+        "recommendations": recommendations or [],
+        "warnings": warnings or [],
+    }).execute()
+    return result.data[0]
+
+
+async def get_vision_history(user_id: str, limit: int = 20) -> list:
+    result = supabase.table("vision_analyses") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .order("created_at", desc=True) \
+        .limit(limit) \
+        .execute()
+    return result.data
+
+
 # ───────────────── Push Subscriptions ─────────────────
 
 async def save_push_subscription(user_id: str, subscription: dict) -> dict:
