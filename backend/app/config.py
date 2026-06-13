@@ -11,3 +11,6 @@ VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
 VAPID_EMAIL = os.getenv("VAPID_EMAIL")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+# Secret token that protects the /api/cron/* endpoints from public triggering.
+CRON_SECRET = os.getenv("CRON_SECRET", "change-me-in-production")
