@@ -164,29 +164,29 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex flex-col md:flex-row h-screen">
       <Sidebar onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div>
+        <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex items-center justify-between gap-2">
+          <div className="min-w-0">
             <h2 className="text-lg font-semibold text-gray-800">Chat</h2>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 truncate">
               Describe your symptoms — I&apos;ll help you understand them
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => router.push("/mediscan")}
-              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors"
+              className="flex items-center gap-2 bg-indigo-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors"
             >
-              <FiCamera className="w-4 h-4" /> MediScan
+              <FiCamera className="w-4 h-4" /> <span className="hidden sm:inline">MediScan</span>
             </button>
             <button
               onClick={handleNewChat}
-              className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 transition-colors"
+              className="flex items-center gap-2 bg-emerald-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 transition-colors"
             >
-              <FiPlus className="w-4 h-4" /> New Chat
+              <FiPlus className="w-4 h-4" /> <span className="hidden sm:inline">New Chat</span>
             </button>
           </div>
         </header>

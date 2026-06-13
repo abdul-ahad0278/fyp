@@ -7,7 +7,17 @@ external cron service (e.g. cron-job.org) calls POST /api/cron/check-reminders
 every minute. This lets the backend run on a free, non-always-on host.
 """
 from datetime import datetime
+from zoneinfo import ZoneInfo
+from app.config import TIMEZONE
 from app.services import supabase_service, notification_service
+
+
+def _now_local() -> datetime:
+    """Current time in the configured timezone (falls back to server time)."""
+    try:
+        return datetime.now(ZoneInfo(TIMEZONE))
+    except Exception:
+        return datetime.now()
 
 
 def _normalize_time_value(value) -> str:
@@ -37,8 +47,8 @@ async def check_and_send_reminders() -> dict:
     sent = 0
     failed = 0
     try:
-        current_time = datetime.now().strftime("%H:%M")
-        print(f"⏱️ Reminder check running at {current_time}")
+        current_time = _now_local().strftime("%H:%M")
+        print(f"[reminders] check running at {current_time} ({TIMEZONE})")
 
         # Get all active reminders
         result = supabase_service.supabase.table("reminders") \
@@ -62,7 +72,7 @@ async def check_and_send_reminders() -> dict:
             print("  No reminders due this minute")
             return {"checked_at": current_time, "due": 0, "sent": 0, "failed": 0}
 
-        print(f"\n⏰ Found {len(due_reminders)} reminder(s) due at {current_time}")
+        print(f"\n[reminders] Found {len(due_reminders)} reminder(s) due at {current_time}")
 
         # For each due reminder, send notification to user
         for reminder in due_reminders:
@@ -84,13 +94,13 @@ async def check_and_send_reminders() -> dict:
 
                 if success:
                     sent += 1
-                    print(f"  ✓ Sent notification for {medicine} to user {user_id}")
+                    print(f"  [ok] Sent notification for {medicine} to user {user_id}")
                 else:
                     failed += 1
-                    print(f"  ✗ Failed to send notification for {medicine}")
+                    print(f"  [fail] Failed to send notification for {medicine}")
             else:
                 failed += 1
-                print(f"  ⚠ No active subscription for user {user_id}")
+                print(f"  [warn] No active subscription for user {user_id}")
 
         return {
             "checked_at": current_time,
@@ -100,5 +110,5 @@ async def check_and_send_reminders() -> dict:
         }
 
     except Exception as e:
-        print(f"✗ Error in reminder check: {str(e)}")
+        print(f"[error] reminder check failed: {str(e)}")
         return {"error": str(e), "sent": sent, "failed": failed}

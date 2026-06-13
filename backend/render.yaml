@@ -26,3 +26,5 @@ services:
         sync: false
       - key: CRON_SECRET
         sync: false
+      - key: TIMEZONE
+        value: "Asia/Karachi"

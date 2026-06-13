@@ -14,3 +14,8 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 # Secret token that protects the /api/cron/* endpoints from public triggering.
 CRON_SECRET = os.getenv("CRON_SECRET", "change-me-in-production")
+
+# Timezone used to decide when reminders are due. Reminder times are stored as
+# local wall-clock (e.g. "12:55"), so this must match the users' local time.
+# Render servers run in UTC, so set this explicitly in production.
+TIMEZONE = os.getenv("TIMEZONE", "Asia/Karachi")
