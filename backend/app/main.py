@@ -10,10 +10,13 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS — allow frontend to call backend
+# CORS — allow frontend to call backend.
+# allow_origin_regex matches ALL Vercel domains (production + per-deploy preview
+# URLs like healthcare-chatbot-xxxx.vercel.app) so CORS doesn't break on each deploy.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONTEND_URL, "http://localhost:3000"],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
